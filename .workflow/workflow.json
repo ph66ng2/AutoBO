@@ -447,7 +447,7 @@
     {
       "id": "BO-FISC-ADR-001",
       "title": "Definir arquitetura e cobertura fiscal do AutoBO",
-      "status": "review",
+      "status": "merged",
       "blockedBy": [
         "BO-QA-003"
       ],
@@ -743,7 +743,7 @@
       "scope": ["Verificar estados, snapshot tributário, UNIQUE de referência e outbox na mesma transação da confirmação.", "Verificar storage privado, hash e auditoria."],
       "outOfScope": ["Implementar o núcleo neste repositório.", "Escolher provider antes da validação contábil."],
       "expectedBehavior": "O espelho só fecha com AP-FISC-CORE-001 homologado e confirmação humana.",
-      "acceptanceCriteria": ["Intenção persiste antes da chamada ao provider.", "INDETERMINATE não reemite.", "Credenciais não chegam ao desktop."],
+      "acceptanceCriteria": ["Intenção persiste antes da chamada ao provider.", "INDETERMINATE não reemite.", "Credenciais não chegam ao desktop.", "A tabela completa de estados de FiscalOperation, derivada dos documentos filhos, está testada no AutoPlatform.", "A idempotência inclui environment, para homologação não colidir com produção."],
       "tests": ["Revisão dos testes de estado, timeout, tenant e outbox do AutoPlatform."],
       "likelyFiles": ["docs/adr/", ".workflow/workflow.json"],
       "risks": ["Encerrar sem evidência.", "Recriar o domínio no Tauri."]

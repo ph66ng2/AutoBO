@@ -30,7 +30,7 @@ FiscalOperation
 
 Estados da operação, derivados dos documentos filhos e não alterados à parte: `DRAFT`, `READY_FOR_REVIEW`, `PROCESSING`, `FULLY_ISSUED`, `PARTIALLY_ISSUED`, `REQUIRES_RECONCILIATION`, `FAILED`, `PARTIALLY_CANCELED`, `CANCELED`.
 
-Uma NFS-e já `ISSUED` não é desfeita porque a NF-e falhou. Cada documento evolui sozinho. A operação só reflete a combinação.
+Uma NFS-e já `ISSUED` não é desfeita porque a NF-e falhou. Cada documento evolui sozinho. O estado da operação é derivado dos filhos. A tabela completa das combinações, inclusive as duas rejeitadas, uma em processamento e uma com falha técnica, é critério de aceite de `AP-FISC-CORE-001`, não desta ADR.
 
 Nenhum provider é escolhido antes do walkthrough real da BMITAG e da validação contábil.
 
@@ -120,6 +120,7 @@ A idempotência não depende de o provider oferecê-la. O AutoPlatform garante:
 UNIQUE (
   company_id,
   issuer_establishment_id,
+  environment,
   document_type,
   fiscal_reference
 )

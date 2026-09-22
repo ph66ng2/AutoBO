@@ -10,6 +10,7 @@ A idempotência da plataforma é:
 UNIQUE (
   company_id,
   issuer_establishment_id,
+  environment,
   document_type,
   fiscal_reference
 )
