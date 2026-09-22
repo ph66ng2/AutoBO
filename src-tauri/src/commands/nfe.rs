@@ -42,18 +42,28 @@ pub async fn importar_nfe_lote(
     Ok(resultados)
 }
 
-async fn importar_nfe_inner(
-    xml_base64: &str,
-    db: &PgPool,
-) -> Result<NFeImportadaDTO, String> {
+fn decodificar_e_parsear_nfe(xml_base64: &str) -> Result<NFeDados, String> {
     let xml_bytes = BASE64
         .decode(xml_base64)
         .map_err(|e| format!("Erro ao decodificar base64: {}", e))?;
     let xml_str = String::from_utf8(xml_bytes)
         .map_err(|e| format!("XML inválido (não é UTF-8): {}", e))?;
+    parse_nfe_xml(&xml_str).map_err(|e| format!("Erro ao processar NF-e: {}", e))
+}
 
-    let dados = parse_nfe_xml(&xml_str)
-        .map_err(|e| format!("Erro ao processar NF-e: {}", e))?;
+fn rejeitar_chave_duplicada(ja_importada: bool, chave_acesso: &str) -> Result<(), String> {
+    if ja_importada {
+        Err(format!("NF-e já importada: chave de acesso {chave_acesso}"))
+    } else {
+        Ok(())
+    }
+}
+
+async fn importar_nfe_inner(
+    xml_base64: &str,
+    db: &PgPool,
+) -> Result<NFeImportadaDTO, String> {
+    let dados = decodificar_e_parsear_nfe(xml_base64)?;
 
     let mut avisos = Vec::new();
     let doc = &dados.destinatario.documento;
@@ -82,10 +92,7 @@ async fn verificar_duplicidade(chave_acesso: &str, db: &PgPool) -> Result<(), St
     .await
     .map_err(|e| format!("Erro ao verificar duplicidade: {}", e))?;
 
-    if exists {
-        return Err(format!("NF-e já importada: chave de acesso {chave_acesso}"));
-    }
-    Ok(())
+    rejeitar_chave_duplicada(exists, chave_acesso)
 }
 
 /// Pré-preenchimento a partir de DANFE ou NFS-e em PDF (atalho de digitação).
@@ -114,4 +121,25 @@ pub async fn importar_danfe_pdf(
         erro: None,
         avisos: extraido.avisos,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{decodificar_e_parsear_nfe, rejeitar_chave_duplicada};
+    use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+
+    #[test]
+    fn parser_invalido_nao_devolve_dados_para_persistir() {
+        let xml = BASE64.encode("<nao-e-nfe>");
+        let erro = decodificar_e_parsear_nfe(&xml).unwrap_err();
+        assert!(erro.contains("Erro ao processar NF-e"));
+    }
+
+    #[test]
+    fn chave_repetida_e_rejeitada_sem_novo_registro() {
+        let chave = "35123456789012345678901234567890123456789012";
+        let erro = rejeitar_chave_duplicada(true, chave).unwrap_err();
+        assert_eq!(erro, format!("NF-e já importada: chave de acesso {chave}"));
+        rejeitar_chave_duplicada(false, chave).unwrap();
+    }
 }
