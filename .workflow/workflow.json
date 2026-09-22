@@ -871,7 +871,7 @@
     {
       "id": "BO-FISC-IMPORT-001",
       "title": "Manter o fluxo de notas importadas",
-      "status": "review",
+      "status": "merged",
       "blockedBy": ["BO-FISC-ADR-001"],
       "context": "autobo_nfes já sustenta a cobrança a partir de XML e PDF importados. A emissão nova não pode reaproveitar essa tabela.",
       "objective": "Preservar a importação atual e a fronteira com o registro de emissão do AutoPlatform.",
