@@ -421,16 +421,7 @@ pub async fn gerar_boleto(
         if nfe_id.is_none() {
             if let Some(nfe) = &input.nfe {
                 nfe_id = Some(
-                    sqlx::query_scalar::<_, i64>(
-                        r#"INSERT INTO autobo_nfes (
-                            pagador_id, numero_nf, serie, chave_acesso, data_emissao,
-                            valor_total, natureza_operacao, status
-                        ) VALUES ($1,$2,$3,$4,$5::date,$6,$7,'IMPORTADA')
-                        ON CONFLICT (chave_acesso) DO UPDATE SET
-                            pagador_id = EXCLUDED.pagador_id,
-                            status = autobo_nfes.status
-                        RETURNING id"#,
-                    )
+                    sqlx::query_scalar::<_, i64>(crate::commands::nfe::sql_registrar_nota_importada())
                     .bind(pagador.id)
                     .bind(&nfe.numero_nf)
                     .bind(&nfe.serie)

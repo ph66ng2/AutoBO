@@ -6,6 +6,7 @@ pub mod boleto_sicredi_flow;
 pub mod boleto_status;
 pub mod crypto;
 pub mod danfe_pdf;
+pub mod fiscal_emissao;
 pub mod nfe_parser;
 pub mod oficina_pdf;
 pub mod secrets;
