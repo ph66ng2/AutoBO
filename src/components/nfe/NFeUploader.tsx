@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { useNFeImport } from "../../hooks/useNFeImport";
 import type { NFeImportadaDTO } from "../../types";
@@ -63,15 +62,6 @@ export function NFeUploader({ onImportada, onVoltar }: NFeUploaderProps) {
 
   return (
     <div className="space-y-4">
-      <Button variant="outline" size="sm" onClick={onVoltar}>
-        ← Voltar
-      </Button>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Importar NF-e</CardTitle>
-        </CardHeader>
-        <CardContent>
           <div
             className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
               dragActive
@@ -130,19 +120,18 @@ export function NFeUploader({ onImportada, onVoltar }: NFeUploaderProps) {
             </div>
           )}
 
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={onVoltar}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" type="button" onClick={onVoltar}>
               Cancelar
             </Button>
             <Button
+              type="button"
               onClick={handleImportar}
               disabled={!arquivo || importando}
             >
               {importando ? "Lendo nota..." : "Importar"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

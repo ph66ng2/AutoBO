@@ -70,6 +70,7 @@ pub fn run() {
             commands::boleto::sincronizar_sicredi_agora,
             commands::boleto::abrir_pdf_boleto,
             commands::boleto::abrir_pdf_do_boleto,
+            commands::cnpj::consultar_cnpj,
             // Dashboard commands
             commands::dashboard::metricas_dashboard,
             commands::dashboard::top_devedores,

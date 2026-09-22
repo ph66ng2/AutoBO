@@ -4,6 +4,12 @@ import { NFeUploader } from "../components/nfe/NFeUploader";
 import { NFeListaImportacao } from "../components/nfe/NFeListaImportacao";
 import { BoletoRevisaoForm } from "../components/boleto/BoletoRevisaoForm";
 import { Card, CardContent } from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import type { NFeImportadaDTO } from "../types";
 
 type Modo = "selecao" | "nfe-upload" | "manual" | "revisao" | "importacao-lote";
@@ -26,6 +32,20 @@ export default function NovoBoleto() {
       setModo("revisao");
     }
   }
+
+  function fechar() {
+    setModo("selecao");
+    setImportadas([]);
+  }
+
+  const titulo =
+    modo === "manual"
+      ? "Novo boleto"
+      : modo === "nfe-upload"
+        ? "Importar NF-e"
+        : modo === "revisao"
+          ? "Revisar boleto"
+          : "Notas importadas";
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -58,41 +78,39 @@ export default function NovoBoleto() {
         </div>
       )}
 
-      {modo === "nfe-upload" && (
-        <NFeUploader onImportada={handleImportada} onVoltar={() => setModo("selecao")} />
-      )}
-
-      {modo === "importacao-lote" && importadas.length > 0 && (
-        <NFeListaImportacao
-          resultados={importadas}
-          onGerarSelecionados={handleGerarSelecionados}
-          onVoltar={() => {
-            setModo("selecao");
-            setImportadas([]);
-          }}
-        />
-      )}
-
-      {modo === "manual" && (
-        <BoletoRevisaoForm
-          modo="manual"
-          onVoltar={() => setModo("selecao")}
-          onSucesso={() => navigate("/boletos")}
-        />
-      )}
-
-      {modo === "revisao" && importadas[0]?.dados && (
-        <BoletoRevisaoForm
-          modo="nfe"
-          dadosNFe={importadas[0].dados}
-          avisos={importadas[0].avisos}
-          onVoltar={() => {
-            setModo("selecao");
-            setImportadas([]);
-          }}
-          onSucesso={() => navigate("/boletos")}
-        />
-      )}
+      <Dialog open={modo !== "selecao"} onOpenChange={(open) => { if (!open) fechar(); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{titulo}</DialogTitle>
+          </DialogHeader>
+          {modo === "nfe-upload" && (
+            <NFeUploader onImportada={handleImportada} onVoltar={fechar} />
+          )}
+          {modo === "importacao-lote" && importadas.length > 0 && (
+            <NFeListaImportacao
+              resultados={importadas}
+              onGerarSelecionados={handleGerarSelecionados}
+              onVoltar={fechar}
+            />
+          )}
+          {modo === "manual" && (
+            <BoletoRevisaoForm
+              modo="manual"
+              onVoltar={fechar}
+              onSucesso={() => navigate("/boletos")}
+            />
+          )}
+          {modo === "revisao" && importadas[0]?.dados && (
+            <BoletoRevisaoForm
+              modo="nfe"
+              dadosNFe={importadas[0].dados}
+              avisos={importadas[0].avisos}
+              onVoltar={fechar}
+              onSucesso={() => navigate("/boletos")}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
