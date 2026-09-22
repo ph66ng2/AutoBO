@@ -15,10 +15,8 @@ A idempotência da plataforma é `UNIQUE (company_id, document_type, fiscal_refe
 | Estado indeterminado sem reemissão automática | obrigatório |
 | XML autorizado, chave e representação auxiliar somente após a emissão | obrigatório |
 | Preservar solicitação, protocolo, resposta sanitizada e rejeição em toda tentativa | obrigatório |
-| Prazo de cancelamento e comportamento fora do prazo | obrigatório |
-| Motivo obrigatório de cancelamento | obrigatório |
-| Substituição como evento próprio, com ligação ao documento anterior | obrigatório |
-| Consulta do evento por protocolo | obrigatório |
+| Prazo de cancelamento, motivo obrigatório, consulta do evento e comportamento fora do prazo | obrigatório |
+| Substituição como evento próprio: nova NFS-e, cancelamento da anterior por substituição e vínculo entre as duas | obrigatório |
 | Intervenção municipal quando a substituição ou o cancelamento exigirem | bloqueador se o município exigir e o provider não cobrir |
 | Rejeição tributária ou cadastral distinta de falha técnica | obrigatório |
 | Credencial de teste separada da live, só no servidor | obrigatório |
@@ -36,18 +34,17 @@ A idempotência da plataforma é `UNIQUE (company_id, document_type, fiscal_refe
 | Consulta, rejeição e reconciliação de timeout | obrigatório |
 | XML autorizado, chave e eventos ligados ao snapshot da emissão | obrigatório |
 | Representação auxiliar recuperável após autorização, sem substituir o XML | obrigatório |
-| Prazo de cancelamento, motivo obrigatório e comportamento fora do prazo | obrigatório |
-| Substituição ou evento equivalente com ligação ao documento anterior | obrigatório |
-| Consulta do evento por protocolo | obrigatório |
+| Cancelamento e consulta do evento | obrigatório |
+| Carta de correção, respeitando os campos permitidos | obrigatório |
+| NF-e complementar e documentos referenciados | bloqueador se a matriz BMITAG exigir |
+| Inutilização de numeração | obrigatório |
 | Intervenção estadual quando exigida | bloqueador se a UF exigir e o provider não cobrir |
-| Inutilização quando a faixa foi consumida sem autorização | obrigatório |
 | Sandbox separado de produção | obrigatório |
 | Isolamento por `company_id`, testado | obrigatório |
 | NCM, CFOP, CST/CSOSN, origem e unidade lidos do snapshot, não do catálogo vivo | obrigatório |
 | `tax_schema_version` e `provider_contract_version` | obrigatório |
 | Contingência da UF alvo | bloqueador se a UF do cliente exigir e o provider não cobrir |
-| Carta de correção | desejável |
 
 ## Operação mista
 
-A homologação mista da BMITAG só fecha quando a matriz contábil manda decompor e as duas portas passam nos obrigatórios, cada uma no seu documento.
+A homologação mista da BMITAG só fecha quando a matriz contábil manda decompor, as duas portas passam nos obrigatórios e a operação sabe ficar `PARTIALLY_ISSUED` ou `REQUIRES_RECONCILIATION` sem desfazer o documento já autorizado.

@@ -905,7 +905,7 @@
       "blockedBy": ["BO-FISC-CORE-001", "BO-SALE-001"],
       "context": "A fila de revisão só confirma. O domínio, o outbox e a chamada ao provider ficam no AutoPlatform.",
       "objective": "Exibir documentos prontos e exigir permissão FISCAL e confirmação humana antes do comando de emissão.",
-      "scope": ["Criar fila READY_FOR_REVIEW.", "Exigir confirmação humana e permissão FISCAL.", "Exibir eventos, artefatos e ações de consulta/cancelamento."],
+      "scope": ["Criar fila READY_FOR_REVIEW.", "Exigir confirmação humana com a permissão da ação: FISCAL_REVIEW, FISCAL_ISSUE ou FISCAL_CANCEL.", "Enviar a versão e o hash do snapshot que a pessoa viu."],
       "outOfScope": ["Emissão automática pós-pagamento.", "Motor tributário nacional."],
       "expectedBehavior": "Venda mista prepara dois documentos correlacionados e cada um evolui independentemente.",
       "acceptanceCriteria": ["NF-e/NFS-e exigem confirmação.", "Rejeição é acionável.", "XML/PDF permanecem acessíveis por tenant.", "Cancelamento fiscal não estorna pagamento."],
