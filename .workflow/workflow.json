@@ -447,7 +447,7 @@
     {
       "id": "BO-FISC-ADR-001",
       "title": "Definir arquitetura e cobertura fiscal do AutoBO",
-      "status": "ready",
+      "status": "review",
       "blockedBy": [
         "BO-QA-003"
       ],
