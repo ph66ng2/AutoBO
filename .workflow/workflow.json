@@ -923,7 +923,7 @@
       "scope": ["Executar homologacao completa em sandbox.", "Validar matriz fiscal aprovada pela contabilidade.", "Produzir Go/No-Go humano."],
       "outOfScope": ["Emitir documento real sem autorização específica.", "Automatizar emissão."],
       "expectedBehavior": "Todos os cenários fiscais convergem com rastreabilidade e confirmação humana.",
-      "acceptanceCriteria": ["NF-e e NFS-e homologadas.", "Venda mista gera dois documentos.", "Timeout é reconciliado.", "XML/PDF, rejeição e cancelamento são comprovados."],
+      "acceptanceCriteria": ["NF-e e NFS-e homologadas.", "Operação mista segue a matriz contábil homologada.", "Timeout é reconciliado.", "XML autorizado, representação auxiliar, rejeição e cancelamento são comprovados."],
       "tests": ["Gate fiscal completo do Plano Diretor.", "Tenant A/B e permissão FISCAL."],
       "likelyFiles": ["docs/reports/", "docs/providers/", ".workflow/workflow.json"],
       "risks": ["Homologar sem matriz contábil.", "Usar produção durante o gate."]
