@@ -49,7 +49,7 @@
     {
       "id": "BO-QA-001",
       "title": "Fechar E2E do boleto manual",
-      "status": "ready",
+      "status": "review",
       "blockedBy": [
         "BO-GOV-001"
       ],

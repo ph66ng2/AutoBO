@@ -5,6 +5,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
 import { abrirPdfBoleto, gerarBoleto } from "../../lib/db";
+import { validarEntradaBoleto } from "../../lib/boleto-entrada";
 import { formatCurrency } from "../../lib/format";
 import type { BoletoInput, NFeDados } from "../../types";
 
@@ -64,43 +65,23 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
     setErro(null);
     setPdfPath(null);
     try {
+      const erroValidacao = validarEntradaBoleto({
+        nome,
+        documento: cpfCnpj,
+        valor,
+        vencimento,
+        logradouro,
+        numero: numeroEndereco,
+        cidade,
+        uf,
+        cep,
+      });
+      if (erroValidacao) {
+        setErro(erroValidacao);
+        return;
+      }
       const documento = digits(cpfCnpj);
-      if (!documento) {
-        setErro("Informe o CPF/CNPJ do pagador.");
-        return;
-      }
-      if (!nome.trim()) {
-        setErro("Informe o nome do pagador.");
-        return;
-      }
       const valorFinal = parseFloat(valor.replace(",", ".")) || 0;
-      if (!(valorFinal > 0)) {
-        setErro("Informe o valor do boleto.");
-        return;
-      }
-      if (!vencimento) {
-        setErro("Informe o vencimento.");
-        return;
-      }
-      if (!logradouro.trim() || !numeroEndereco.trim()) {
-        setErro("Informe logradouro e número do pagador (obrigatório para Sicredi).");
-        return;
-      }
-      if (!cidade.trim() || uf.trim().length !== 2) {
-        setErro("Informe cidade e UF (2 letras) do pagador.");
-        return;
-      }
-      if (digits(cep).length !== 8) {
-        setErro("CEP deve ter 8 dígitos.");
-        return;
-      }
-      const enderecoMontado = `${logradouro.trim()}, ${numeroEndereco.trim()}`;
-      if (enderecoMontado.length > 40) {
-        setErro(
-          `Endereço com ${enderecoMontado.length} caracteres (máx. 40). Abrevie o logradouro.`,
-        );
-        return;
-      }
 
       const nNota = numeroNf.trim();
       const descricaoFinal = descricao.trim() || mensagem.trim() || "Cobrança";
