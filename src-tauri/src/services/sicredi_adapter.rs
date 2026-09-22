@@ -50,6 +50,21 @@ impl std::fmt::Display for AdaptadorErro {
 }
 impl std::error::Error for AdaptadorErro {}
 
+pub const ESPECIE_NOTA_COMERCIAL: &str = "DUPLICATA_MERCANTIL_INDICACAO";
+pub const ESPECIE_NOTA_SERVICO: &str = "DUPLICATA_SERVICO_INDICACAO";
+
+/// Espécie que o cadastro Sicredi aceita neste formulário.
+/// Nota comercial e nota de serviço não são a série fiscal da NF-e.
+pub fn especie_documento_da_nota(tipo: &str) -> Result<&'static str, AdaptadorErro> {
+    match tipo.trim() {
+        "COMERCIAL" | ESPECIE_NOTA_COMERCIAL => Ok(ESPECIE_NOTA_COMERCIAL),
+        "SERVICO" | ESPECIE_NOTA_SERVICO => Ok(ESPECIE_NOTA_SERVICO),
+        other => Err(AdaptadorErro(format!(
+            "Espécie documental não suportada neste boleto: {other}"
+        ))),
+    }
+}
+
 pub fn digits_only(value: &str) -> String {
     value.chars().filter(|c| c.is_ascii_digit()).collect()
 }
@@ -307,6 +322,30 @@ mod tests {
         assert_eq!(
             montar_endereco("RUA DOUTOR VARGAS", "150").unwrap(),
             "RUA DOUTOR VARGAS, 150"
+        );
+    }
+
+    #[test]
+    fn especie_da_nota_vira_especie_documento() {
+        assert_eq!(
+            especie_documento_da_nota("COMERCIAL").unwrap(),
+            ESPECIE_NOTA_COMERCIAL
+        );
+        assert_eq!(
+            especie_documento_da_nota("SERVICO").unwrap(),
+            ESPECIE_NOTA_SERVICO
+        );
+        let mut comercial = base_input();
+        comercial.especie_documento = ESPECIE_NOTA_COMERCIAL.into();
+        let mut servico = base_input();
+        servico.especie_documento = ESPECIE_NOTA_SERVICO.into();
+        assert_eq!(
+            build_cadastro_body(&comercial).unwrap()["especieDocumento"],
+            ESPECIE_NOTA_COMERCIAL
+        );
+        assert_eq!(
+            build_cadastro_body(&servico).unwrap()["especieDocumento"],
+            ESPECIE_NOTA_SERVICO
         );
     }
 

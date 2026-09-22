@@ -8,16 +8,22 @@ import { Input } from "../components/ui/input";
 import { abrirPdfDoBoleto, excluirBoleto, listarBoletos } from "../lib/db";
 import { formatCurrency, formatDatePtBr } from "../lib/format";
 import {
-  FILTROS_STATUS_BOLETO,
+  GRUPOS_STATUS_BOLETO,
+  contarGrupo,
+  contarStatus,
+  grupoStatusBoleto,
+  labelStatusBoleto,
+  pertenceAoGrupo,
   variantStatusBoleto,
-  type FiltroStatusBoleto,
+  type GrupoStatusBoleto,
 } from "../lib/boleto-status";
 import type { Boleto } from "../types";
 
 export default function Boletos() {
   const [boletos, setBoletos] = useState<Boleto[]>([]);
   const [busca, setBusca] = useState("");
-  const [status, setStatus] = useState<FiltroStatusBoleto>("TODOS");
+  const [grupo, setGrupo] = useState<GrupoStatusBoleto>("TODOS");
+  const [status, setStatus] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<number | null>(null);
   const [abrindo, setAbrindo] = useState<number | null>(null);
@@ -34,7 +40,8 @@ export default function Boletos() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return boletos.filter((b) => {
-      if (status !== "TODOS" && b.status !== status) return false;
+      if (!pertenceAoGrupo(b.status, grupo)) return false;
+      if (status && b.status !== status) return false;
       if (!q) return true;
       const blob = [
         b.seu_numero,
@@ -48,7 +55,7 @@ export default function Boletos() {
         .toLowerCase();
       return blob.includes(q);
     });
-  }, [boletos, busca, status]);
+  }, [boletos, busca, grupo, status]);
 
   async function excluir(id: number, numero: string) {
     if (!window.confirm(`Excluir o boleto ${numero}? Dá para importar a nota de novo depois.`)) {
@@ -92,29 +99,23 @@ export default function Boletos() {
         </Link>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="space-y-3">
         <Input
+          className="max-w-md"
           placeholder="Buscar por número, pagador ou documento"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <div className="flex flex-wrap gap-1">
-          {FILTROS_STATUS_BOLETO.map((filtro) => (
-            <button
-              key={filtro}
-              type="button"
-              onClick={() => setStatus(filtro)}
-              className={`h-8 rounded-md px-2.5 text-xs font-medium ${
-                status === filtro
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-              aria-pressed={status === filtro}
-            >
-              {filtro === "TODOS" ? "Todos" : filtro}
-            </button>
-          ))}
-        </div>
+        <FiltroSituacao
+          statuses={boletos.map((b) => b.status)}
+          grupo={grupo}
+          status={status}
+          onGrupo={(id) => {
+            setGrupo(id);
+            setStatus(null);
+          }}
+          onStatus={setStatus}
+        />
       </div>
 
       {erro && (
@@ -165,7 +166,7 @@ export default function Boletos() {
                     <td className="tabular-nums">{formatCurrency(b.valor_nominal)}</td>
                     <td className="tabular-nums">{formatDatePtBr(b.data_vencimento)}</td>
                     <td>
-                      <Badge variant={variantStatusBoleto(b.status)}>{b.status}</Badge>
+                      <Badge variant={variantStatusBoleto(b.status)}>{labelStatusBoleto(b.status)}</Badge>
                     </td>
                     <td className="text-right">
                       <div className="flex justify-end gap-1">
@@ -204,4 +205,77 @@ export default function Boletos() {
       </Card>
     </div>
   );
+}
+
+function FiltroSituacao({
+  statuses,
+  grupo,
+  status,
+  onGrupo,
+  onStatus,
+}: {
+  statuses: string[];
+  grupo: GrupoStatusBoleto;
+  status: string | null;
+  onGrupo: (id: GrupoStatusBoleto) => void;
+  onStatus: (status: string | null) => void;
+}) {
+  const frequencia = contarStatus(statuses);
+  const visiveis = GRUPOS_STATUS_BOLETO.filter(
+    (item) => item.id === "TODOS" || item.id === grupo || contarGrupo(statuses, item.id) > 0,
+  );
+  const detalhe = grupoStatusBoleto(grupo).statuses.filter((item) => (frequencia[item] ?? 0) > 0);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por situação">
+        {visiveis.map((item) => {
+          const ativo = item.id === grupo;
+          const quantidade = contarGrupo(statuses, item.id);
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={ativo}
+              onClick={() => onGrupo(item.id)}
+              className={classeFiltro(ativo)}
+            >
+              {item.label}
+              <span className={`tabular-nums ${ativo ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
+                {quantidade}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {detalhe.length > 1 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Detalhar situação">
+          {detalhe.map((item) => (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={status === item}
+              onClick={() => onStatus(status === item ? null : item)}
+              className={classeFiltro(status === item, true)}
+            >
+              {labelStatusBoleto(item)}
+              <span className={`tabular-nums ${status === item ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
+                {frequencia[item]}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function classeFiltro(ativo: boolean, menor = false) {
+  return [
+    "inline-flex items-center gap-1.5 rounded-md font-medium transition-[color,background-color,transform] duration-150 ease-out active:scale-[0.96]",
+    menor ? "h-7 px-2 text-[11px]" : "h-8 px-2.5 text-xs",
+    ativo
+      ? "bg-primary text-primary-foreground"
+      : "bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground",
+  ].join(" ");
 }

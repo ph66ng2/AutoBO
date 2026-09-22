@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { listarBoletos, metricasDashboard } from "../lib/db";
-import { variantStatusBoleto } from "../lib/boleto-status";
+import { labelStatusBoleto, variantStatusBoleto } from "../lib/boleto-status";
 import { formatCurrency, formatDatePtBr } from "../lib/format";
 import type { Boleto, DashboardMetricas } from "../types";
 
@@ -121,7 +121,7 @@ export default function Dashboard() {
                     <td className="tabular-nums">{formatCurrency(b.valor_nominal)}</td>
                     <td className="tabular-nums">{formatDatePtBr(b.data_vencimento)}</td>
                     <td>
-                      <Badge variant={variantStatusBoleto(b.status)}>{b.status}</Badge>
+                      <Badge variant={variantStatusBoleto(b.status)}>{labelStatusBoleto(b.status)}</Badge>
                     </td>
                   </tr>
                 ))}

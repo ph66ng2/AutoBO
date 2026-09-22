@@ -340,6 +340,23 @@ fn normalize_tipo_cobranca(tipo: Option<&str>) -> String {
     }
 }
 
+fn validar_rascunho_boleto(valor_nominal: f64, data_vencimento: &str) -> Result<(), String> {
+    if valor_nominal <= 0.0 {
+        return Err("Valor nominal deve ser maior que zero".into());
+    }
+    if data_vencimento.trim().is_empty() {
+        return Err("Informe o vencimento.".into());
+    }
+    Ok(())
+}
+
+fn validar_documento_pagador(documento: &str) -> Result<(), String> {
+    if documento.is_empty() {
+        return Err("Documento do pagador é obrigatório".into());
+    }
+    Ok(())
+}
+
 fn tipo_pessoa_from_doc(documento: &str) -> String {
     if documento.len() <= 11 {
         "PF".into()
@@ -353,9 +370,7 @@ pub async fn gerar_boleto(
     input: BoletoInput,
     state: tauri::State<'_, AppState>,
 ) -> Result<GerarBoletoResult, String> {
-    if input.valor_nominal <= 0.0 {
-        return Err("Valor nominal deve ser maior que zero".into());
-    }
+    validar_rascunho_boleto(input.valor_nominal, &input.data_vencimento)?;
 
     let origem = normalize_origem(&input.origem);
     let mut itens = input.itens.clone();
@@ -390,9 +405,7 @@ pub async fn gerar_boleto(
             .ok_or("Informe o pagador (documento e nome)")?;
         let mut dados = dados;
         dados.documento = digits_only(&dados.documento);
-        if dados.documento.is_empty() {
-            return Err("Documento do pagador é obrigatório".into());
-        }
+        validar_documento_pagador(&dados.documento)?;
         if dados.tipo_pessoa.trim().is_empty() {
             dados.tipo_pessoa = tipo_pessoa_from_doc(&dados.documento);
         }
@@ -753,4 +766,33 @@ pub async fn sincronizar_sicredi_agora(
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     crate::services::sicredi_reconcile::sincronizar_liquidacoes(&state.db).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{validar_documento_pagador, validar_rascunho_boleto};
+
+    #[test]
+    fn rejeita_valor_nao_positivo_antes_de_persistir() {
+        let err = validar_rascunho_boleto(0.0, "2026-10-21").unwrap_err();
+        assert!(err.contains("maior que zero"));
+    }
+
+    #[test]
+    fn rejeita_vencimento_vazio() {
+        let err = validar_rascunho_boleto(10.0, "  ").unwrap_err();
+        assert!(err.contains("vencimento"));
+    }
+
+    #[test]
+    fn rejeita_documento_vazio() {
+        let err = validar_documento_pagador("").unwrap_err();
+        assert!(err.contains("Documento"));
+    }
+
+    #[test]
+    fn aceita_rascunho_sintetico() {
+        validar_rascunho_boleto(89.9, "2026-11-01").unwrap();
+        validar_documento_pagador("11222333000181").unwrap();
+    }
 }
