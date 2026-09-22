@@ -24,7 +24,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-Banco: as migrations ficam em `src-tauri/migrations/` e o runner manual usa a tabela `autobo_migrations` (`src-tauri/src/db.rs`). O `cargo test` padrão não conecta no Postgres. A prova contra um banco é o teste ignorado `apply_migrations_to_configured_database`, que lê `DATABASE_URL` de `src-tauri/.env` ou do ambiente. Rodar só contra um banco de desenvolvimento, nunca como passo automático de baseline:
+Banco: as migrations ficam em `src-tauri/migrations/` e o runner manual usa a tabela `autobo_migrations` (`src-tauri/src/db.rs`). O `cargo test` padrão não conecta no Postgres. No CI, o job `migrations` sobe um Postgres descartável e roda só `apply_migrations_to_disposable_database`. O teste ignorado `apply_migrations_to_configured_database` continua manual e exige o banco da oficina:
 
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml -- --ignored apply_migrations_to_configured_database

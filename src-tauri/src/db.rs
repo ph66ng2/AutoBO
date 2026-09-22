@@ -555,6 +555,34 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "exige DATABASE_URL de um Postgres descartável, sem tabelas do AutoOS"]
+    async fn apply_migrations_to_disposable_database() {
+        let url = normalize_database_url(
+            env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
+        );
+        let pool = PgPoolOptions::new()
+            .max_connections(2)
+            .connect(&url)
+            .await
+            .expect("connect");
+        run_migrations_manual(&pool).await.expect("migrations");
+        run_migrations_manual(&pool).await.expect("migrations idempotentes");
+        for tabela in [
+            "autobo_migrations",
+            "autobo_pagadores",
+            "autobo_nfes",
+            "autobo_boletos",
+        ] {
+            assert!(tabela_existe(&pool, tabela).await, "{tabela} ausente");
+        }
+        let integ = detectar_integracao_autoos(&pool).await;
+        assert!(
+            !integ.clientes && !integ.equipamentos && !integ.produtos,
+            "o banco descartável não pode ser o operacional do AutoOS"
+        );
+    }
+
+    #[tokio::test]
     #[ignore = "conecta no DATABASE_URL configurado"]
     async fn apply_migrations_to_configured_database() {
         dotenv();
