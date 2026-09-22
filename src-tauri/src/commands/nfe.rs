@@ -123,6 +123,20 @@ pub async fn importar_danfe_pdf(
     })
 }
 
+pub const STATUS_NOTA_IMPORTADA: &str = "IMPORTADA";
+
+/// Grava somente nota importada. Emissão fiscal não usa `autobo_nfes`.
+pub fn sql_registrar_nota_importada() -> &'static str {
+    r#"INSERT INTO autobo_nfes (
+                            pagador_id, numero_nf, serie, chave_acesso, data_emissao,
+                            valor_total, natureza_operacao, status
+                        ) VALUES ($1,$2,$3,$4,$5::date,$6,$7,'IMPORTADA')
+                        ON CONFLICT (chave_acesso) DO UPDATE SET
+                            pagador_id = EXCLUDED.pagador_id,
+                            status = autobo_nfes.status
+                        RETURNING id"#
+}
+
 #[cfg(test)]
 mod tests {
     use super::{decodificar_e_parsear_nfe, rejeitar_chave_duplicada};
@@ -141,5 +155,14 @@ mod tests {
         let erro = rejeitar_chave_duplicada(true, chave).unwrap_err();
         assert_eq!(erro, format!("NF-e já importada: chave de acesso {chave}"));
         rejeitar_chave_duplicada(false, chave).unwrap();
+    }
+
+    #[test]
+    fn importacao_nao_grava_emissao() {
+        let sql = super::sql_registrar_nota_importada();
+        assert!(sql.contains("'IMPORTADA'"));
+        assert!(!sql.contains("EMITIDA"));
+        assert!(!sql.contains("ISSUED"));
+        assert_eq!(super::STATUS_NOTA_IMPORTADA, "IMPORTADA");
     }
 }
