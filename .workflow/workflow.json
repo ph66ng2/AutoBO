@@ -490,11 +490,11 @@
     },
     {
       "id": "BO-FISC-CORE-001",
-      "title": "Integrar núcleo fiscal server-side e revisão humana",
+      "title": "Integrar o desktop ao núcleo fiscal do AutoPlatform",
       "status": "ready",
       "blockedBy": [
         "BO-FISC-ADR-001",
-        "BO-AP-FISC-EXT-001"
+        "BO-AP-FISC-CORE-EXT-001"
       ],
       "context": "A tabela autobo_nfes continua representando documentos importados. O registro autoritativo de emissão e a máquina de estados vivem no AutoPlatform; o AutoBO implementa adapters e experiência de revisão.",
       "objective": "Integrar o AutoBO ao núcleo fiscal provider-neutral do AutoPlatform sem criar uma segunda fonte da verdade no desktop.",
@@ -541,9 +541,10 @@
       "title": "Homologar adapter NFS-e server-side pela UI do AutoBO",
       "status": "ready",
       "blockedBy": [
-        "BO-FISC-CORE-001"
+        "BO-FISC-CORE-001",
+        "BO-AP-FISC-NFSE-EXT-001"
       ],
-      "context": "Fiscal é prioritário e não espera a convergência. A Ext permanece candidata para NFS-e, mas o adapter e a chave de teste ficam no AutoPlatform.",
+      "context": "Fiscal é prioritário e não espera a convergência. O adapter e a credencial de teste ficam no AutoPlatform. O provider só é escolhido depois do walkthrough da BMITAG e da validação contábil.",
       "objective": "Homologar pela UI a emissão, consulta, cancelamento, PDF/XML e estados indeterminados do adapter NFS-e server-side.",
       "scope": [
         "Confirmar que o AutoPlatform usa exclusivamente credencial de teste.",
@@ -585,7 +586,8 @@
       "title": "Homologar adapter NF-e server-side pela UI do AutoBO",
       "status": "ready",
       "blockedBy": [
-        "BO-FISC-CORE-001"
+        "BO-FISC-CORE-001",
+        "BO-AP-FISC-NFE-EXT-001"
       ],
       "context": "A emissão de NFS-e não cobre as peças vendidas em uma ordem de serviço. A NF-e modelo 55 precisa de provider, sandbox e dados tributários específicos definidos pela ADR fiscal.",
       "objective": "Homologar pela UI o adapter NF-e modelo 55 escolhido e implementado no AutoPlatform.",
@@ -732,19 +734,49 @@
       "risks": ["Confirmar pelo navegador.", "Misturar billing SaaS com pagamento da oficina."]
     },
     {
-      "id": "BO-AP-FISC-EXT-001",
-      "title": "Confirmar núcleo e providers fiscais do AutoPlatform",
+      "id": "BO-AP-FISC-CORE-EXT-001",
+      "title": "Confirmar núcleo fiscal do AutoPlatform",
       "status": "blocked",
       "blockedBy": ["BO-AP-CONTRACT-EXT-001"],
-      "context": "Registro fiscal, credenciais, certificados e chamadas aos providers são server-side.",
-      "objective": "Representar AP-FISC-CORE-001, AP-FISC-CONFIG-001, AP-FISC-NFSE-001 e AP-FISC-NFE-001.",
-      "scope": ["Verificar máquina de estados, XML/PDF e portas separadas NF-e/NFS-e.", "Verificar confirmação humana e reconciliação de indeterminado."],
-      "outOfScope": ["Documento real sem autorização.", "Reutilizar autobo_nfes como emissão."],
-      "expectedBehavior": "Venda mista prepara dois documentos relacionados sem emitir automaticamente.",
-      "acceptanceCriteria": ["XML é artefato principal.", "Timeout consulta antes de retry.", "Credenciais não chegam ao desktop."],
-      "tests": ["NF-e, NFS-e, mista, rejeição, timeout, consulta, cancelamento e tenant A/B."],
+      "context": "Espelho de AP-FISC-CORE-001. Domínio, estados, snapshots, armazenamento e outbox são server-side.",
+      "objective": "Registrar evidência do núcleo fiscal sem implementar esse domínio no AutoBO.",
+      "scope": ["Verificar estados, snapshot tributário, UNIQUE de referência e outbox na mesma transação da confirmação.", "Verificar storage privado, hash e auditoria."],
+      "outOfScope": ["Implementar o núcleo neste repositório.", "Escolher provider antes da validação contábil."],
+      "expectedBehavior": "O espelho só fecha com AP-FISC-CORE-001 homologado e confirmação humana.",
+      "acceptanceCriteria": ["Intenção persiste antes da chamada ao provider.", "INDETERMINATE não reemite.", "Credenciais não chegam ao desktop."],
+      "tests": ["Revisão dos testes de estado, timeout, tenant e outbox do AutoPlatform."],
+      "likelyFiles": ["docs/adr/", ".workflow/workflow.json"],
+      "risks": ["Encerrar sem evidência.", "Recriar o domínio no Tauri."]
+    },
+    {
+      "id": "BO-AP-FISC-NFSE-EXT-001",
+      "title": "Confirmar adapter NFS-e do AutoPlatform",
+      "status": "blocked",
+      "blockedBy": ["BO-AP-FISC-CORE-EXT-001"],
+      "context": "Espelho de AP-FISC-NFSE-001. O adapter de NFS-e fica no AutoPlatform.",
+      "objective": "Registrar evidência do adapter de NFS-e sem escolhê-lo antes do walkthrough da BMITAG.",
+      "scope": ["Verificar porta NFS-e, cancelamento, substituição e layout vigente."],
+      "outOfScope": ["NF-e modelo 55.", "Implementar o adapter no desktop."],
+      "expectedBehavior": "O espelho só fecha com AP-FISC-NFSE-001 homologado.",
+      "acceptanceCriteria": ["Consulta por referência ou protocolo existe.", "XML autorizado é o artefato principal."],
+      "tests": ["Revisão do sandbox de NFS-e do AutoPlatform."],
       "likelyFiles": ["docs/providers/", ".workflow/workflow.json"],
-      "risks": ["Duplicar documento em timeout.", "Emitir sem confirmação humana."]
+      "risks": ["Tratar NFS-e como cobertura de mercadoria."]
+    },
+    {
+      "id": "BO-AP-FISC-NFE-EXT-001",
+      "title": "Confirmar adapter NF-e 55 do AutoPlatform",
+      "status": "blocked",
+      "blockedBy": ["BO-AP-FISC-CORE-EXT-001"],
+      "context": "Espelho de AP-FISC-NFE-001. O adapter de NF-e modelo 55 fica no AutoPlatform.",
+      "objective": "Registrar evidência do adapter de NF-e 55.",
+      "scope": ["Verificar autorização, inutilização, cancelamento e contingência aplicável."],
+      "outOfScope": ["NFS-e.", "Implementar o adapter no desktop."],
+      "expectedBehavior": "O espelho só fecha com AP-FISC-NFE-001 homologado.",
+      "acceptanceCriteria": ["Timeout consulta antes de nova autorização.", "Snapshot não muda com o catálogo vivo."],
+      "tests": ["Revisão do sandbox de NF-e do AutoPlatform."],
+      "likelyFiles": ["docs/providers/", ".workflow/workflow.json"],
+      "risks": ["Usar o adapter de NFS-e para peças."]
     },
     {
       "id": "BO-AP-SIC-EXT-001",
@@ -837,12 +869,42 @@
       "risks": ["Duplicar cobrança.", "Expor credencial do provider."]
     },
     {
+      "id": "BO-FISC-IMPORT-001",
+      "title": "Manter o fluxo de notas importadas",
+      "status": "ready",
+      "blockedBy": ["BO-FISC-ADR-001"],
+      "context": "autobo_nfes já sustenta a cobrança a partir de XML e PDF importados. A emissão nova não pode reaproveitar essa tabela.",
+      "objective": "Preservar a importação atual e a fronteira com o registro de emissão do AutoPlatform.",
+      "scope": ["Garantir que importação, revisão e boleto continuem em autobo_nfes.", "Impedir que emissão grave nessa tabela."],
+      "outOfScope": ["Emitir NFS-e ou NF-e.", "Migrar nota importada para documento emitido."],
+      "expectedBehavior": "Uma NF-e importada continua gerando cobrança sem virar documento emitido pelo AutoBO.",
+      "acceptanceCriteria": ["Importação existente passa.", "Nenhum insert de emissão cai em autobo_nfes."],
+      "tests": ["Regressão de BO-QA-002.", "Busca que emissão não usa a tabela de importação."],
+      "likelyFiles": ["src-tauri/src/commands/nfe.rs", "src/components/nfe/", ".workflow/workflow.json"],
+      "risks": ["Misturar nota recebida com nota gerada."]
+    },
+    {
+      "id": "BO-FISC-STATUS-001",
+      "title": "Acompanhar rejeição, PDF, XML e histórico fiscal",
+      "status": "ready",
+      "blockedBy": ["BO-FISC-UI-001", "BO-AP-FISC-NFSE-EXT-001", "BO-AP-FISC-NFE-EXT-001"],
+      "context": "Depois da confirmação, o desktop só observa o estado que o AutoPlatform publicou.",
+      "objective": "Mostrar REJECTED, TECHNICAL_FAILURE, INDETERMINATE, XML autorizado, representação auxiliar e histórico sem tratar o PDF como registro principal.",
+      "scope": ["Consultar estado e protocolo.", "Abrir XML e representação por URL assinada.", "Exibir quem confirmou, emitiu ou cancelou."],
+      "outOfScope": ["Guardar certificado ou senha.", "Reemitir localmente em timeout."],
+      "expectedBehavior": "O AutoBO acompanha o comando fiscal mesmo se a janela foi fechada depois da confirmação.",
+      "acceptanceCriteria": ["INDETERMINATE não oferece reemissão.", "XML autorizado é o artefato principal.", "Logs da tela não exibem credencial."],
+      "tests": ["Rejeição, falha técnica, timeout, cancelamento e substituição.", "Tenant A/B."],
+      "likelyFiles": ["src/pages/", "src/components/", "src-tauri/src/commands/"],
+      "risks": ["Tratar DANFE como documento fiscal.", "Pedir nova emissão enquanto o resultado é indeterminado."]
+    },
+    {
       "id": "BO-FISC-UI-001",
       "title": "Criar fila de revisão e emissão fiscal humana",
       "status": "ready",
-      "blockedBy": ["BO-FISC-CORE-001", "BO-FISC-EXT-001", "BO-FISC-NFE-001", "BO-SALE-001"],
-      "context": "A v1 prepara documentos automaticamente, mas uma pessoa com permissão FISCAL confirma cada emissão.",
-      "objective": "Exibir documentos prontos, validações, XML/PDF, rejeições, consulta e cancelamento.",
+      "blockedBy": ["BO-FISC-CORE-001", "BO-SALE-001"],
+      "context": "A fila de revisão só confirma. O domínio, o outbox e a chamada ao provider ficam no AutoPlatform.",
+      "objective": "Exibir documentos prontos e exigir permissão FISCAL e confirmação humana antes do comando de emissão.",
       "scope": ["Criar fila READY_FOR_REVIEW.", "Exigir confirmação humana e permissão FISCAL.", "Exibir eventos, artefatos e ações de consulta/cancelamento."],
       "outOfScope": ["Emissão automática pós-pagamento.", "Motor tributário nacional."],
       "expectedBehavior": "Venda mista prepara dois documentos correlacionados e cada um evolui independentemente.",
@@ -855,7 +917,7 @@
       "id": "BO-FISC-GATE-001",
       "title": "Homologar marco Fiscal Operacional",
       "status": "ready",
-      "blockedBy": ["BO-FISC-UI-001"],
+      "blockedBy": ["BO-FISC-UI-001", "BO-FISC-STATUS-001"],
       "context": "Fiscal tem prioridade e não depende da integração AutoOS↔AutoBO.",
       "objective": "Provar NF-e, NFS-e, venda mista, artefatos, falhas e cancelamento antes do primeiro documento real.",
       "scope": ["Executar homologacao completa em sandbox.", "Validar matriz fiscal aprovada pela contabilidade.", "Produzir Go/No-Go humano."],
