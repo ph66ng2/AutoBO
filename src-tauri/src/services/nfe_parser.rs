@@ -273,6 +273,14 @@ pub fn parse_nfe_xml(xml: &str) -> Result<NFeDados, NFeError> {
         .collect();
 
     let valor_produtos = inf_nfe.total.icms_tot.v_prod;
+    if let Some(declarado) = valor_produtos {
+        let soma_itens: f64 = itens.iter().map(|item| item.subtotal).sum();
+        if (declarado - soma_itens).abs() > 0.01 {
+            return Err(NFeError(format!(
+                "Inconsistent total: item sum {soma_itens} differs from vProd {declarado}"
+            )));
+        }
+    }
 
     Ok(NFeDados {
         numero_nf: inf_nfe.ide.n_nf,
@@ -484,6 +492,20 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
         assert!(err.contains("chave de acesso"));
+    }
+
+    #[test]
+    fn test_total_inconsistente_nao_produz_dados() {
+        let xml = r#"<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+  <infNFe Id="NFe35123456789012345678901234567890123456789012" versao="4.00">
+    <ide><nNF>1</nNF><dhEmi>2024-01-15T10:00:00-03:00</dhEmi></ide>
+    <dest><CNPJ>11222333000181</CNPJ><xNome>Teste</xNome></dest>
+    <det nItem="1"><prod><xProd>P</xProd><qCom>1</qCom><uCom>UN</uCom><vUnCom>10</vUnCom><vProd>10</vProd></prod></det>
+    <total><ICMSTot><vNF>10.00</vNF><vProd>99.00</vProd></ICMSTot></total>
+  </infNFe>
+</NFe>"#;
+        let err = parse_nfe_xml(xml).unwrap_err().to_string();
+        assert!(err.contains("Inconsistent total"));
     }
 
     #[test]
