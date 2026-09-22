@@ -2,12 +2,11 @@
   "project": "AutoBO — convergência com AutoOS e evolução financeiro-fiscal",
   "baseBranch": "origin/main",
   "promotionTarget": "origin/main",
-  "executionBlockedReason": "O diretório ainda não é um repositório Git. BO-GOV-001 deve ser concluído antes de spawn, PR ou merge.",
   "tickets": [
     {
       "id": "BO-GOV-001",
       "title": "Versionar o AutoBO e adotar workflow por tickets",
-      "status": "ready",
+      "status": "merged",
       "blockedBy": [],
       "context": "O AutoBO possui código e plano executado, mas o diretório atual não tem repositório Git nem workflow executável. Continuar sem histórico torna qualquer integração financeira difícil de revisar e reverter.",
       "objective": "Criar uma linha principal versionada e preservar o estado atual antes de iniciar a convergência com o AutoOS.",

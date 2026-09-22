@@ -2,7 +2,7 @@
 
 `workflow.json` organiza a convergência AutoOS + AutoBO e as trilhas posteriores.
 
-O projeto ainda não possui repositório Git. Portanto, nenhum ticket deve gerar branch, worktree, PR ou merge antes de `BO-GOV-001` ser concluído e a branch principal real ser registrada no workflow.
+A branch principal é `origin/main`. O merge é humano: nenhum ticket faz merge, release ou alteração de produção sozinho. Enquanto `BO-GOV-001` não estiver `merged`, os demais tickets não geram branch, worktree nem pull request.
 
 O marco `BO-SUITE-GATE-001` significa **Produto em Sincronia**: uma OS produz exatamente uma intenção financeira, o AutoBO publica o estado de volta e retries não duplicam dados. Depois desse gate:
 
