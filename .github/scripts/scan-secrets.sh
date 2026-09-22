@@ -13,7 +13,7 @@ if git grep -I -q -E 'BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY'; then
   exit 1
 fi
 
-if git grep -I -q -E 'sb_secret_|sk_live_'; then
+if git grep -I -q -E 'sb_secret_|sk_live_' -- ':!.github/scripts/scan-secrets.sh'; then
   printf 'Segredo privilegiado versionado.\n' >&2
   exit 1
 fi
