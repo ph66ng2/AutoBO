@@ -1,0 +1,96 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: segredos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recusar segredos versionados
+        run: bash .github/scripts/scan-secrets.sh
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  rust:
+    name: rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Placeholder do frontendDist para o compile do Tauri
+        run: mkdir -p dist && printf '<!doctype html><title>ci</title>\n' > dist/index.html
+      - name: cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: cargo test
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+  migrations:
+    name: migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: autobo
+          POSTGRES_PASSWORD: autobo
+          POSTGRES_DB: autobo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U autobo -d autobo"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://autobo:autobo@localhost:5432/autobo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Placeholder do frontendDist para o compile do Tauri
+        run: mkdir -p dist && printf '<!doctype html><title>ci</title>\n' > dist/index.html
+      - name: Aplicar migrations num Postgres descartável
+        run: cargo test --manifest-path src-tauri/Cargo.toml -- --ignored apply_migrations_to_disposable_database
+
+  windows:
+    name: windows-smoke
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: cargo check
+        run: cargo check --manifest-path src-tauri/Cargo.toml

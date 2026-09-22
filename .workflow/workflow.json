@@ -629,7 +629,7 @@
     {
       "id": "BO-QA-003",
       "title": "Criar pipeline obrigatório do AutoBO",
-      "status": "ready",
+      "status": "review",
       "blockedBy": ["BO-QA-001", "BO-QA-002"],
       "context": "Nenhuma feature financeira ou fiscal nova deve entrar sem gates reproduzíveis.",
       "objective": "Executar build frontend, Vitest, cargo check/test, migration test e smoke de build Windows em cada mudança.",
