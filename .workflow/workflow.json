@@ -90,7 +90,7 @@
     {
       "id": "BO-QA-002",
       "title": "Fechar E2E da importação NF-e para boleto",
-      "status": "review",
+      "status": "merged",
       "blockedBy": [
         "BO-GOV-001"
       ],
