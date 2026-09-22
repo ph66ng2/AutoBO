@@ -51,6 +51,11 @@ pub struct ClienteAutoOS {
     pub cpf_cnpj: Option<String>,
     pub telefone: Option<String>,
     pub email: Option<String>,
+    pub cep: Option<String>,
+    pub endereco: Option<String>,
+    pub numero: Option<String>,
+    pub complemento: Option<String>,
+    pub bairro: Option<String>,
     pub cidade: Option<String>,
     pub uf: Option<String>,
     pub ativo: Option<bool>,
@@ -390,12 +395,14 @@ pub async fn listar_clientes_autoos(
     if let Some(pattern) = termo {
         sqlx::query_as::<_, ClienteAutoOS>(
             r#"SELECT id, nome, tipo_pessoa, documento, razao_social, nome_fantasia,
-                      cpf_cnpj, telefone, email, cidade, uf, ativo
+                      cpf_cnpj, telefone, email, cep, endereco, numero, complemento,
+                      bairro, cidade, uf, ativo
                FROM clientes
                WHERE COALESCE(ativo, true) = true
                  AND (
                    COALESCE(nome, '') ILIKE $1
                    OR COALESCE(razao_social, '') ILIKE $1
+                   OR COALESCE(nome_fantasia, '') ILIKE $1
                    OR COALESCE(documento, '') ILIKE $1
                    OR COALESCE(cpf_cnpj, '') ILIKE $1
                  )
@@ -409,7 +416,8 @@ pub async fn listar_clientes_autoos(
     } else {
         sqlx::query_as::<_, ClienteAutoOS>(
             r#"SELECT id, nome, tipo_pessoa, documento, razao_social, nome_fantasia,
-                      cpf_cnpj, telefone, email, cidade, uf, ativo
+                      cpf_cnpj, telefone, email, cep, endereco, numero, complemento,
+                      bairro, cidade, uf, ativo
                FROM clientes
                WHERE COALESCE(ativo, true) = true
                ORDER BY COALESCE(nome, razao_social, '') ASC

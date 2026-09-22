@@ -1,13 +1,23 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useEffect, useState } from "react";
+import { FileText, Loader2, Receipt, Search, User } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Badge } from "../ui/badge";
-import { abrirPdfBoleto, gerarBoleto } from "../../lib/db";
+import { abrirPdfBoleto, gerarBoleto, listarClientesAutoos } from "../../lib/db";
 import { validarEntradaBoleto } from "../../lib/boleto-entrada";
+import { OPCOES_TIPO_NOTA, especieInicial } from "../../lib/especie-nota";
+import {
+  consultarCnpj,
+  dadosDoCliente,
+  mensagemConsultaCnpj,
+  preencherInformados,
+  preencherVazios,
+  validarCNPJ,
+  type DadosEmpresa,
+} from "../../lib/cnpj";
 import { formatCurrency } from "../../lib/format";
-import type { BoletoInput, NFeDados } from "../../types";
+import type { BoletoInput, ClienteAutoOS, NFeDados } from "../../types";
 
 interface BoletoRevisaoFormProps {
   modo: "nfe" | "manual";
@@ -28,7 +38,7 @@ function vencimentoPadrao(): string {
 }
 
 const selectClass =
-  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground";
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm text-foreground";
 
 export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso }: BoletoRevisaoFormProps) {
   const dest = dadosNFe?.destinatario;
@@ -46,7 +56,9 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
   const [cep, setCep] = useState(dest?.cep || "");
 
   const [numeroNf, setNumeroNf] = useState(dadosNFe?.numero_nf || "");
-  const [serie, setSerie] = useState(dadosNFe?.serie || "");
+  const [especieDocumento, setEspecieDocumento] = useState(
+    especieInicial(dadosNFe?.serie, dadosNFe?.natureza_operacao),
+  );
   const [dataEmissao, setDataEmissao] = useState(dadosNFe?.data_emissao?.slice(0, 10) || "");
   const [valor, setValor] = useState(
     dadosNFe?.valor_total && dadosNFe.valor_total > 0 ? String(dadosNFe.valor_total) : "",
@@ -59,6 +71,120 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
+  const [sugestoes, setSugestoes] = useState<ClienteAutoOS[]>([]);
+  const [sugestoesAbertas, setSugestoesAbertas] = useState(false);
+  const [consultandoCnpj, setConsultandoCnpj] = useState(false);
+  const [avisoCnpj, setAvisoCnpj] = useState<string | null>(null);
+  const [termoAplicado, setTermoAplicado] = useState("");
+
+  const termoDocumento = cpfCnpj.trim();
+  const termoNome = nome.trim();
+  const termoSugestao = modo === "manual"
+    ? termoDocumento.length >= 2
+      ? termoDocumento
+      : termoNome.length >= 2
+        ? termoNome
+        : ""
+    : "";
+  const ancoraSugestao = termoDocumento.length >= 2 ? "documento" : "nome";
+  const cnpjConsultavel = modo === "manual" && validarCNPJ(cpfCnpj);
+
+  useEffect(() => {
+    if (!termoSugestao || termoSugestao === termoAplicado) {
+      if (!termoSugestao) setSugestoes([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      listarClientesAutoos(termoSugestao)
+        .then((lista) => {
+          setSugestoes(lista.slice(0, 8));
+          setSugestoesAbertas(true);
+        })
+        .catch(() => setSugestoes([]));
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [termoSugestao, termoAplicado]);
+
+  function aplicarEmpresa(dados: DadosEmpresa, somenteVazios: boolean) {
+    const atual: DadosEmpresa = {
+      nome,
+      documento: cpfCnpj.replace(/\D/g, ""),
+      email,
+      telefone,
+      cep,
+      logradouro,
+      numero: numeroEndereco,
+      bairro,
+      cidade,
+      uf,
+    };
+    const proximo = somenteVazios ? preencherVazios(atual, dados) : preencherInformados(atual, dados);
+    setNome(proximo.nome);
+    setCpfCnpj(proximo.documento);
+    setEmail(proximo.email);
+    setTelefone(proximo.telefone);
+    setCep(proximo.cep);
+    setLogradouro(proximo.logradouro);
+    setNumeroEndereco(proximo.numero);
+    setBairro(proximo.bairro);
+    setCidade(proximo.cidade);
+    setUf(proximo.uf);
+    setTermoAplicado(proximo.documento.length >= 2 ? proximo.documento : proximo.nome);
+    setSugestoesAbertas(false);
+  }
+
+  function escolherCliente(cliente: ClienteAutoOS) {
+    aplicarEmpresa(dadosDoCliente(cliente), false);
+    setAvisoCnpj(null);
+  }
+
+  async function buscarDadosCnpj() {
+    if (!cnpjConsultavel || consultandoCnpj) return;
+    setConsultandoCnpj(true);
+    setAvisoCnpj(null);
+    setErro(null);
+    try {
+      const consulta = await consultarCnpj(cpfCnpj);
+      aplicarEmpresa(consulta, true);
+      setAvisoCnpj("Dados do CNPJ foram preenchidos. Revise antes de gerar o boleto.");
+    } catch (error) {
+      setAvisoCnpj(mensagemConsultaCnpj(error));
+    } finally {
+      setConsultandoCnpj(false);
+    }
+  }
+
+  function listaClientes() {
+    if (!sugestoesAbertas || sugestoes.length === 0) return null;
+    return (
+      <div
+        role="listbox"
+        aria-label="Clientes da oficina"
+        className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md"
+      >
+        {sugestoes.map((cliente) => {
+          const dados = dadosDoCliente(cliente);
+          return (
+            <button
+              key={cliente.id}
+              type="button"
+              role="option"
+              className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-accent"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => escolherCliente(cliente)}
+            >
+              <span className="font-medium">{dados.nome || "Cliente sem nome"}</span>
+              <span className="text-xs text-muted-foreground">
+                {[dados.documento, dados.cidade && dados.uf ? `${dados.cidade}/${dados.uf}` : dados.cidade]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   const handleGerar = async () => {
     setGerando(true);
@@ -93,6 +219,7 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
         valor_nominal: valorFinal,
         data_vencimento: vencimento,
         tipo_cobranca: tipoCobranca,
+        especie_documento: especieDocumento,
         mensagem: mensagem.trim() || descricaoFinal,
         pagador: {
           tipo_pessoa: documento.length > 11 ? "PJ" : "PF",
@@ -122,7 +249,7 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
         const emissao = dataEmissao || new Date().toISOString().slice(0, 10);
         dados.nfe = {
           numero_nf: nNota || dadosNFe?.numero_nf || "S_N",
-          serie: serie.trim() || dadosNFe?.serie,
+          serie: dadosNFe?.serie,
           chave_acesso: dadosNFe?.chave_acesso || `MANUAL-${nNota || Date.now()}`,
           data_emissao: emissao,
           valor_total: valorFinal,
@@ -141,119 +268,136 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
   };
 
   return (
-    <div className="space-y-4">
-      <Button variant="outline" size="sm" onClick={onVoltar}>
-        ← Voltar
-      </Button>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle>
-              {modo === "nfe" ? "Revisar e editar boleto" : "Novo boleto — entrada manual"}
-            </CardTitle>
-            <Badge variant={modo === "nfe" ? "default" : "warning"}>
-              {modo === "nfe" ? "Nota / PDF" : "Manual"}
-            </Badge>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tudo aqui é editável. O Nº da nota vira o documento do boleto.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <form
+      className="space-y-6"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void handleGerar();
+      }}
+    >
           {modo === "nfe" && avisos && avisos.length > 0 && (
-            <div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="space-y-1 rounded-md border border-amber-400 bg-amber-100 p-3 text-sm text-amber-900">
               {avisos.map((aviso, i) => (
-                <p key={i}>⚠ {aviso}</p>
+                <p key={i}>{aviso}</p>
               ))}
             </div>
           )}
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground">Pagador</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <h3 className="text-sm font-semibold">Dados do pagador</h3>
+              <Badge variant={modo === "nfe" ? "default" : "warning"}>
+                {modo === "nfe" ? "Nota / PDF" : "Manual"}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative col-span-2 space-y-2">
                 <Label>Nome / razão social *</Label>
                 <Input
-                  className="mt-1"
                   placeholder="Nome do pagador"
                   value={nome}
-                  onChange={(e) => setNome(e.target.value)}
+                  onChange={(e) => {
+                    setNome(e.target.value);
+                    setSugestoesAbertas(true);
+                  }}
+                  onFocus={() => setSugestoesAbertas(true)}
                 />
+                {ancoraSugestao === "nome" && listaClientes()}
               </div>
-              <div>
+              <div className="relative space-y-2">
                 <Label>CPF / CNPJ *</Label>
-                <Input
-                  className="mt-1"
-                  placeholder="000.000.000-00"
-                  value={cpfCnpj}
-                  onChange={(e) => setCpfCnpj(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="CPF ou CNPJ"
+                    value={cpfCnpj}
+                    onChange={(e) => {
+                      setCpfCnpj(e.target.value);
+                      setAvisoCnpj(null);
+                      setSugestoesAbertas(true);
+                    }}
+                    onFocus={() => setSugestoesAbertas(true)}
+                  />
+                  {modo === "manual" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => void buscarDadosCnpj()}
+                      disabled={!cnpjConsultavel || consultandoCnpj}
+                      aria-label="Buscar dados do CNPJ"
+                      title="Buscar dados do CNPJ"
+                    >
+                      {consultandoCnpj ? (
+                        <Loader2 className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Search aria-hidden="true" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {ancoraSugestao === "documento" && listaClientes()}
+                {avisoCnpj && (
+                  <p className="mt-1 text-xs text-muted-foreground">{avisoCnpj}</p>
+                )}
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>E-mail</Label>
                 <Input
-                  className="mt-1"
                   placeholder="email@cliente.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Telefone</Label>
                 <Input
-                  className="mt-1"
                   placeholder="(71) 00000-0000"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>CEP</Label>
                 <Input
-                  className="mt-1"
                   placeholder="00000-000"
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-2 space-y-2">
                 <Label>Logradouro</Label>
                 <Input
-                  className="mt-1"
                   placeholder="Rua, avenida..."
                   value={logradouro}
                   onChange={(e) => setLogradouro(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Número</Label>
                 <Input
-                  className="mt-1"
                   value={numeroEndereco}
                   onChange={(e) => setNumeroEndereco(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Bairro</Label>
                 <Input
-                  className="mt-1"
                   value={bairro}
                   onChange={(e) => setBairro(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Cidade</Label>
                 <Input
-                  className="mt-1"
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>UF</Label>
                 <Input
-                  className="mt-1"
                   maxLength={2}
                   placeholder="BA"
                   value={uf}
@@ -263,41 +407,53 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
             </div>
           </div>
 
-          <div className="space-y-3 border-t pt-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Nota e cobrança</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+          <hr />
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <h3 className="text-sm font-semibold">Nota e cobrança</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>Nº da nota (documento do boleto) *</Label>
                 <Input
-                  className="mt-1"
                   placeholder="447"
                   value={numeroNf}
                   onChange={(e) => setNumeroNf(e.target.value)}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">Vai no campo documento / seu número do boleto.</p>
               </div>
-              <div>
-                <Label>Série</Label>
-                <Input
-                  className="mt-1"
-                  placeholder="NFS-e ou 1"
-                  value={serie}
-                  onChange={(e) => setSerie(e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label>Tipo da nota</Label>
+                <select
+                  className={selectClass}
+                  value={especieDocumento}
+                  onChange={(e) => setEspecieDocumento(e.target.value)}
+                >
+                  {OPCOES_TIPO_NOTA.map((opcao) => (
+                    <option key={opcao.value} value={opcao.value}>
+                      {opcao.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {dadosNFe?.serie && !dadosNFe.serie.toLowerCase().includes("nfs")
+                    ? `Série fiscal da nota: ${dadosNFe.serie}. `
+                    : ""}
+                  No Sicredi isso vira a espécie do título.
+                </p>
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Emissão</Label>
                 <Input
-                  className="mt-1"
                   type="date"
                   value={dataEmissao}
                   onChange={(e) => setDataEmissao(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Valor (R$) *</Label>
                 <Input
-                  className="mt-1"
                   type="number"
                   step="0.01"
                   min={0}
@@ -306,10 +462,9 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
                   onChange={(e) => setValor(e.target.value)}
                 />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-2 space-y-2">
                 <Label>Descrição do serviço</Label>
                 <Input
-                  className="mt-1"
                   placeholder="O que está sendo cobrado"
                   value={descricao}
                   onChange={(e) => {
@@ -328,22 +483,25 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
             )}
           </div>
 
-          <div className="space-y-3 border-t pt-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Boleto</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+          <hr />
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              <h3 className="text-sm font-semibold">Boleto</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>Vencimento *</Label>
                 <Input
-                  className="mt-1"
                   type="date"
                   value={vencimento}
                   onChange={(e) => setVencimento(e.target.value)}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label>Tipo de cobrança</Label>
                 <select
-                  className={`${selectClass} mt-1`}
+                  className={selectClass}
                   value={tipoCobranca}
                   onChange={(e) => setTipoCobranca(e.target.value)}
                 >
@@ -352,10 +510,9 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
                   <option value="UNICA">Única</option>
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-2 space-y-2">
                 <Label>Mensagem no boleto</Label>
                 <Input
-                  className="mt-1"
                   placeholder="Mensagem que aparece no PDF"
                   value={mensagem}
                   onChange={(e) => setMensagem(e.target.value)}
@@ -372,22 +529,20 @@ export function BoletoRevisaoForm({ modo, dadosNFe, avisos, onVoltar, onSucesso 
           {pdfPath && (
             <div className="space-y-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
               <p>PDF salvo em {pdfPath}</p>
-              <Button size="sm" variant="outline" onClick={() => onSucesso?.()}>
+              <Button size="sm" variant="outline" type="button" onClick={() => onSucesso?.()}>
                 Concluir
               </Button>
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onVoltar}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" type="button" onClick={onVoltar}>
               Cancelar
             </Button>
-            <Button onClick={() => void handleGerar()} disabled={gerando}>
+            <Button type="submit" disabled={gerando}>
               {gerando ? "Gerando..." : "Gerar boleto"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+    </form>
   );
 }

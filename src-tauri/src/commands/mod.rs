@@ -14,6 +14,8 @@ pub mod documentos;
 pub use documentos::{salvar_orcamento_pdf, salvar_ordem_servico_pdf};
 
 pub mod boleto;
+pub mod cnpj;
+pub use cnpj::consultar_cnpj;
 pub use boleto::{
     abrir_pdf_boleto, abrir_pdf_do_boleto, buscar_boleto, cancelar_boleto, excluir_boleto,
     gerar_boleto, listar_boletos, retentar_pdf_oficial, retentar_rascunho,
