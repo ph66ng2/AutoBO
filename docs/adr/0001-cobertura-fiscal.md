@@ -28,7 +28,7 @@ FiscalOperation
 └── FiscalDocument: NF-e
 ```
 
-Estados da operação: `DRAFT`, `READY_FOR_REVIEW`, `PROCESSING`, `FULLY_ISSUED`, `PARTIALLY_ISSUED`, `FAILED`, `REQUIRES_RECONCILIATION`, `CANCELED`.
+Estados da operação, derivados dos documentos filhos e não alterados à parte: `DRAFT`, `READY_FOR_REVIEW`, `PROCESSING`, `FULLY_ISSUED`, `PARTIALLY_ISSUED`, `REQUIRES_RECONCILIATION`, `FAILED`, `PARTIALLY_CANCELED`, `CANCELED`.
 
 Uma NFS-e já `ISSUED` não é desfeita porque a NF-e falhou. Cada documento evolui sozinho. A operação só reflete a combinação.
 
@@ -96,7 +96,7 @@ FiscalSequence(
 )
 ```
 
-Isso cobre a série, o número da NF-e, o número e a série da DPS, o ambiente, a inutilização e a concorrência entre workers. Dois workers não consomem o mesmo número.
+A sequência controla a reserva concorrente dos números. Dois workers não consomem o mesmo número. Números reservados ou consumidos sem autorização geram uma pendência de reconciliação e, quando exigido, um evento de inutilização separado, preservando protocolo e resultado. A sequência não executa nem registra essa inutilização.
 
 ### Fonte dos dados e snapshot
 
@@ -167,6 +167,7 @@ Os espelhos `BO-AP-*-EXT-*` permanecem `blocked` e não geram código neste repo
 | Manutenção BMITAG com serviço e peça | A matriz decompõe em NFS-e e NF-e 55 dentro de uma `FiscalOperation` |
 | As duas emitidas | Operação `FULLY_ISSUED` |
 | NFS-e emitida e NF-e rejeitada | Operação `PARTIALLY_ISSUED`; a NFS-e permanece válida; a NF-e mostra a correção |
+| NFS-e cancelada e NF-e ainda emitida | Operação `PARTIALLY_CANCELED`; a NF-e autorizada permanece |
 | Uma emitida e a outra indeterminada | Operação `REQUIRES_RECONCILIATION`; sem cancelamento nem reenvio automático |
 | Autoridade recusa um documento | `REJECTED`; nova revisão do snapshot e nova confirmação antes de outra tentativa |
 | Provider fora ou credencial inválida | `TECHNICAL_FAILURE` naquele documento |
