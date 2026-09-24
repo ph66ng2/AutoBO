@@ -8,6 +8,7 @@ pub mod services;
 pub mod validators;
 
 use db::AppState;
+use commands::AuthAppState;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 /// Initialize tracing for structured logging.
@@ -44,10 +45,12 @@ pub fn run() {
         jobs::scheduler::iniciar_scheduler(pool.clone());
         pool
     });
+    let auth = AuthAppState::from_env();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(AppState { db: pool })
+        .manage(auth)
         .invoke_handler(tauri::generate_handler![
             // Pagador commands
             commands::pagador::listar_pagadores,
@@ -96,6 +99,12 @@ pub fn run() {
             commands::configuracoes::testar_sicredi,
             commands::configuracoes::testar_smtp,
             commands::configuracoes::testar_whatsapp,
+            commands::auth::login_autobo,
+            commands::auth::restaurar_sessao_autobo,
+            commands::auth::selecionar_empresa_autobo,
+            commands::auth::bloquear_sessao_autobo,
+            commands::auth::sair_sessao_autobo,
+            commands::auth::perfil_sessao_autobo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
