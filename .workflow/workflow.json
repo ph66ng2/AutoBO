@@ -646,7 +646,7 @@
     {
       "id": "BO-AP-ID-EXT-001",
       "title": "Confirmar identidade compartilhada do AutoPlatform",
-      "status": "blocked",
+      "status": "merged",
       "blockedBy": [],
       "context": "O AutoBO precisa do mesmo company_id e memberships do AutoOS, com permissões específicas do produto.",
       "objective": "Representar AP-ID-001 no DAG local sem duplicar migrations de identidade.",
