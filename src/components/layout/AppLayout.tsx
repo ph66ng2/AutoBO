@@ -9,6 +9,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useAuth } from "../../hooks/useAuth";
 import type { IntegracaoAutoOS } from "../../types";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -20,6 +21,9 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   );
 
 export function AppLayout({ integracao }: { integracao: IntegracaoAutoOS }) {
+  const { view, lock, signOut } = useAuth();
+  const session = view.session;
+
   return (
     <div className="flex h-screen bg-background">
       <aside className="flex w-60 flex-col bg-sidebar">
@@ -62,8 +66,29 @@ export function AppLayout({ integracao }: { integracao: IntegracaoAutoOS }) {
             Sicredi
           </NavLink>
         </nav>
-        <div className="border-t border-sidebar-border p-3">
-          <p className="px-1 text-xs text-white/40">AutoBO · Financeiro</p>
+        <div className="space-y-2 border-t border-sidebar-border p-3">
+          {session && (
+            <div className="px-1">
+              <p className="truncate text-xs text-white/80">{session.email}</p>
+              <p className="text-[11px] uppercase tracking-wide text-white/40">{session.role}</p>
+            </div>
+          )}
+          <div className="flex gap-1">
+            <button
+              type="button"
+              className="flex-1 rounded-md px-2 py-1.5 text-xs text-white/60 transition-[background-color,color] duration-150 hover:bg-white/10 hover:text-white"
+              onClick={() => void lock()}
+            >
+              Bloquear
+            </button>
+            <button
+              type="button"
+              className="flex-1 rounded-md px-2 py-1.5 text-xs text-white/60 transition-[background-color,color] duration-150 hover:bg-white/10 hover:text-white"
+              onClick={() => void signOut()}
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
       <main className="flex-1 overflow-auto bg-background">

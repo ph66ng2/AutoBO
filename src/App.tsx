@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { LoginGate } from "./components/auth/LoginGate";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import Boletos from "./pages/Boletos";
 import NovoBoleto from "./pages/NovoBoleto";
@@ -17,7 +19,7 @@ const INTEGRACAO_VAZIA: IntegracaoAutoOS = {
   produtos: false,
 };
 
-export default function App() {
+function AuthenticatedApp() {
   const [integracao, setIntegracao] = useState<IntegracaoAutoOS>(INTEGRACAO_VAZIA);
 
   useEffect(() => {
@@ -49,5 +51,21 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function AppShell() {
+  const { view } = useAuth();
+  if (view.kind !== "authenticated") {
+    return <LoginGate />;
+  }
+  return <AuthenticatedApp />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

@@ -9,6 +9,7 @@ pub mod danfe_pdf;
 pub mod fiscal_emissao;
 pub mod nfe_parser;
 pub mod oficina_pdf;
+pub mod auth;
 pub mod secrets;
 pub mod sicredi;
 pub mod sicredi_adapter;
