@@ -1,5 +1,99 @@
 {
-  "project": "AutoBO — retaguarda comercial, financeira, fiscal e estoque central",
+  "project": "AutoBO — código doador e histórico de boleto e importação",
+  "roadmap": {
+    "milestone": "AutoOS Fiscal PROD BMITAG",
+    "role": "Referência de regras e código a absorver; fora do caminho crítico como aplicação",
+    "focusIds": [],
+    "deferredIds": [
+      "BO-INV-001",
+      "BO-INV-002",
+      "BO-SALE-001",
+      "BO-PAY-UI-001",
+      "BO-SIC-GO-001",
+      "BO-INV-AUTOOS-001",
+      "BO-MIG-001",
+      "BO-STANDALONE-GATE-001",
+      "BO-REL-GATE-001"
+    ],
+    "superseded": [
+      {
+        "id": "BO-FISC-CORE-001",
+        "by": [
+          "AP-FISC-CORE-001",
+          "AO-FISC-003"
+        ]
+      },
+      {
+        "id": "BO-FISC-EXT-001",
+        "by": [
+          "AP-FISC-NFSE-001",
+          "AO-FISC-002"
+        ]
+      },
+      {
+        "id": "BO-FISC-NFE-001",
+        "by": [
+          "AP-FISC-NFE-001",
+          "AO-FISC-002"
+        ]
+      },
+      {
+        "id": "BO-FISC-UI-001",
+        "by": [
+          "AO-FISC-001",
+          "AO-FISC-002"
+        ]
+      },
+      {
+        "id": "BO-FISC-STATUS-001",
+        "by": [
+          "AO-FISC-004",
+          "AO-FISC-005",
+          "AO-FISC-006"
+        ]
+      },
+      {
+        "id": "BO-FISC-GATE-001",
+        "by": [
+          "AP-FISC-GATE-001",
+          "AO-FISC-GATE-001",
+          "AP-FISC-PROD-001"
+        ]
+      },
+      {
+        "id": "BO-SUITE-002",
+        "by": [
+          "AO-SUITE-001"
+        ]
+      },
+      {
+        "id": "BO-SUITE-003",
+        "by": [
+          "AO-SUITE-002",
+          "AP-INTEGRATION-001"
+        ]
+      },
+      {
+        "id": "BO-SUITE-004",
+        "by": [
+          "AO-FISC-006"
+        ]
+      },
+      {
+        "id": "BO-SUITE-EXT-001",
+        "by": [
+          "AO-SUITE-002"
+        ]
+      },
+      {
+        "id": "BO-SUITE-GATE-001",
+        "by": [
+          "AO-FISC-GATE-001"
+        ]
+      }
+    ],
+    "note": "Histórico e status não são apagados; superseded/deferred são decisões de prioridade, não sinônimos de merged ou blocked."
+  },
   "baseBranch": "origin/main",
   "promotionTarget": "origin/main",
   "architectureDecisions": [
