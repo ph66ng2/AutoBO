@@ -796,7 +796,7 @@
     {
       "id": "BO-AUTH-001",
       "title": "Implementar login SaaS e entitlement do AutoBO",
-      "status": "ready",
+      "status": "review",
       "blockedBy": ["BO-QA-003", "BO-AP-ID-EXT-001"],
       "context": "AutoBO v1 é online-only e usa a mesma conta empresarial do AutoOS, com autobo_access próprio.",
       "objective": "Implementar login, empresa, perfil, keyring, bloqueio e logout sem DATABASE_URL no app comercial.",

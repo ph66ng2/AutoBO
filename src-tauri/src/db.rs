@@ -49,6 +49,10 @@ pub async fn init_db() -> Result<PgPool, Box<dyn std::error::Error>> {
 
 /// Attempt to load DATABASE_URL from a .env file located next to the executable
 /// or in the current working directory (development fallback).
+pub fn load_dotenv() {
+    dotenv();
+}
+
 fn dotenv() {
     let env_path = find_env_file();
     if let Some(path) = env_path {

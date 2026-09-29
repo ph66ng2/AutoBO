@@ -39,3 +39,9 @@ pub use pagador::{
 
 pub mod dashboard;
 pub use dashboard::{metricas_dashboard, top_devedores, DashboardMetricas, TopDevedor};
+
+pub mod auth;
+pub use auth::{
+    bloquear_sessao_autobo, login_autobo, perfil_sessao_autobo, restaurar_sessao_autobo,
+    sair_sessao_autobo, selecionar_empresa_autobo, AuthAppState,
+};

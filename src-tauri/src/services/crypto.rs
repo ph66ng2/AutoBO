@@ -78,6 +78,13 @@ pub fn decrypt(encoded: &str) -> Result<String, CryptoError> {
 mod tests {
     use super::*;
     use std::env;
+    use std::sync::{Mutex, MutexGuard};
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn lock_test_env() -> MutexGuard<'static, ()> {
+        ENV_LOCK.lock().unwrap_or_else(|error| error.into_inner())
+    }
 
     fn set_test_key() {
         // 32 bytes base64-encoded: "abcdefghijklmnopqrstuvwxyz012345"
@@ -87,6 +94,7 @@ mod tests {
 
     #[test]
     fn test_encrypt_decrypt_roundtrip() {
+        let _guard = lock_test_env();
         set_test_key();
         let plaintext = "Hello, AutoBO!";
         let encrypted = encrypt(plaintext).expect("encrypt failed");
@@ -96,6 +104,7 @@ mod tests {
 
     #[test]
     fn test_different_outputs() {
+        let _guard = lock_test_env();
         set_test_key();
         let e1 = encrypt("test").expect("encrypt 1 failed");
         let e2 = encrypt("test").expect("encrypt 2 failed");
@@ -107,6 +116,7 @@ mod tests {
 
     #[test]
     fn test_invalid_ciphertext_rejected() {
+        let _guard = lock_test_env();
         set_test_key();
         assert!(decrypt("not-valid-base64!!!").is_err());
         assert!(decrypt("").is_err());
@@ -114,6 +124,7 @@ mod tests {
 
     #[test]
     fn test_empty_plaintext() {
+        let _guard = lock_test_env();
         set_test_key();
         let encrypted = encrypt("").expect("encrypt empty failed");
         let decrypted = decrypt(&encrypted).expect("decrypt empty failed");
@@ -122,6 +133,7 @@ mod tests {
 
     #[test]
     fn test_wrong_key_fails() {
+        let _guard = lock_test_env();
         set_test_key();
         let encrypted = encrypt("secret").expect("encrypt failed");
         env::set_var(
